@@ -25,11 +25,14 @@ Run the core regression checks without Heaps or a game ROM:
 
 ```sh
 haxe -cp src -cp tests -main CoreTest --interp
+haxe -cp src -cp tests -main ProcessorTest --interp
 ```
 
 The checks use synthetic cartridges and cover ROM loading/mapping, register
 buffering, palette/nametable mirroring, scrolling, background/sprite pixels,
-frame timing, CPU/NMI integration, DMA, and controller serialization. The web
+frame timing, CPU/NMI integration, DMA, and controller serialization. CPU checks
+cover branches, flags, stack returns, register wrapping, and instruction timing.
+A synthetic boot ROM also waits for vblank and initializes a colored framebuffer. The web
 build and JavaScript core tests have also been checked; commercial-game
 compatibility and an interactive browser session have not been verified.
 

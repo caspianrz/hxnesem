@@ -149,6 +149,29 @@ class CoreTest {
 		for (_ in 0...89342) running.clock();
 		equal(running.ram.get(0), 1, 'CPU executes ROM and services PPU NMI');
 
+		// Boot like a game: wait for vblank, clear RAM, call setup, then render.
+		var bootRom = rom(1);
+		var boot = [0x78, 0xd8, 0xa2, 0xff, 0x9a];
+		for (_ in 0...2) for (byte in [0x2c, 0x02, 0x20, 0x10, 0xfb]) boot.push(byte);
+		for (byte in [0xa9, 0, 0xa2, 0, 0x9d, 0, 0, 0xe8, 0xd0, 0xfa,
+			0x20, 0, 0x81, 0xa9, 42, 0x85, 0]) boot.push(byte);
+		var idle = 0x8000 + boot.length;
+		for (byte in [0x4c, idle & 255, idle >> 8]) boot.push(byte);
+		var setup = [0xa9, 0x3f, 0x8d, 6, 0x20, 0xa9, 0, 0x8d, 6, 0x20,
+			0x8d, 7, 0x20, 0xa9, 1, 0x8d, 7, 0x20,
+			0xa9, 0, 0x8d, 0, 0x20, 0x8d, 5, 0x20, 0x8d, 5, 0x20,
+			0xa9, 0x0a, 0x8d, 1, 0x20, 0x60];
+		for (i in 0...boot.length) bootRom.set(16 + i, boot[i]);
+		for (i in 0...setup.length) bootRom.set(16 + 0x100 + i, setup[i]);
+		for (i in 0...8) bootRom.set(16 + 16384 + i, 255);
+		var bootBus = new Bus(); bootBus.insertCartridge(new Cartridge(bootRom));
+		for (_ in 0...4 * 89342) bootBus.clock();
+		equal(bootBus.ram.get(0), 42, 'game boot completes RAM loop and subroutine');
+		equal(bootBus.cpu.regs.s, 255, 'game boot stack restored');
+		equal(bootBus.ppu.screen.get(0), 0, 'CPU-initialized background red');
+		equal(bootBus.ppu.screen.get(1), 0x1e, 'CPU-initialized background green');
+		equal(bootBus.ppu.screen.get(2), 0x74, 'CPU-initialized background blue');
+
 		var bus = new Bus(); bus.insertCartridge(new Cartridge(rom()));
 		equal(bus.cpu.regs.pc, 0x8000, 'reset vector through cartridge');
 		bus.write(0x2008, 4); bus.write(0x2006, 0x20); bus.write(0x2006, 0);

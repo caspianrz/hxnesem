@@ -60,7 +60,7 @@ class Processor {
 		this.opTable.set(0x01, {cycles: 6, addressingFunction: this.izx, operationFunction: this.ora}); // ora izx 6
 		this.opTable.set(0x05, {cycles: 3, addressingFunction: this.zp0, operationFunction: this.ora}); // ora zp0 3
 		this.opTable.set(0x06, {cycles: 5, addressingFunction: this.zp0, operationFunction: this.asl}); // asl zp0 5
-		this.opTable.set(0x08, {cycles: 8, addressingFunction: this.imp, operationFunction: this.php}); // php imp 8
+		this.opTable.set(0x08, {cycles: 3, addressingFunction: this.imp, operationFunction: this.php}); // php imp 3
 		this.opTable.set(0x09, {cycles: 2, addressingFunction: this.imm, operationFunction: this.ora}); // ora imm 2
 		this.opTable.set(0x0A, {cycles: 2, addressingFunction: this.imp, operationFunction: this.asl}); // asl imp 2
 		this.opTable.set(0x0D, {cycles: 4, addressingFunction: this.abs, operationFunction: this.ora}); // ora abs 4
@@ -88,7 +88,7 @@ class Processor {
 		this.opTable.set(0x2E, {cycles: 6, addressingFunction: this.abs, operationFunction: this.rol}); // rol abs 6
 
 		this.opTable.set(0x30, {cycles: 2, addressingFunction: this.rel, operationFunction: this.bmi}); // bmi rel 2
-		this.opTable.set(0x31, {cycles: 5, addressingFunction: this.izx, operationFunction: this.and}); // and izx 5
+		this.opTable.set(0x31, {cycles: 5, addressingFunction: this.izy, operationFunction: this.and}); // and izy 5
 		this.opTable.set(0x35, {cycles: 4, addressingFunction: this.zpx, operationFunction: this.and}); // and zpx 4
 		this.opTable.set(0x36, {cycles: 6, addressingFunction: this.zpx, operationFunction: this.rol}); // rol zpx 6
 		this.opTable.set(0x38, {cycles: 2, addressingFunction: this.imp, operationFunction: this.sec}); // sec imp 2
@@ -109,15 +109,15 @@ class Processor {
 
 		this.opTable.set(0x50, {cycles: 2, addressingFunction: this.rel, operationFunction: this.bvc}); // bvc rel 2
 		this.opTable.set(0x51, {cycles: 5, addressingFunction: this.izy, operationFunction: this.eor}); // eor izy 5
-		this.opTable.set(0x55, {cycles: 3, addressingFunction: this.zpx, operationFunction: this.eor}); // eor zpx 3
-		this.opTable.set(0x56, {cycles: 5, addressingFunction: this.zpx, operationFunction: this.lsr}); // lsr zpx 5
+		this.opTable.set(0x55, {cycles: 4, addressingFunction: this.zpx, operationFunction: this.eor}); // eor zpx 4
+		this.opTable.set(0x56, {cycles: 6, addressingFunction: this.zpx, operationFunction: this.lsr}); // lsr zpx 6
 		this.opTable.set(0x58, {cycles: 2, addressingFunction: this.imp, operationFunction: this.cli}); // cli imp 2
 		this.opTable.set(0x59, {cycles: 4, addressingFunction: this.aby, operationFunction: this.eor}); // eor aby 4
 		this.opTable.set(0x5D, {cycles: 4, addressingFunction: this.abx, operationFunction: this.eor}); // eor abx 4
 		this.opTable.set(0x5E, {cycles: 7, addressingFunction: this.abx, operationFunction: this.lsr}); // lsr abx 7
 
-		this.opTable.set(0x60, {cycles: 5, addressingFunction: this.imp, operationFunction: this.rts}); // rts imp 5
-		this.opTable.set(0x61, {cycles: 5, addressingFunction: this.izx, operationFunction: this.adc}); // adc izx 5
+		this.opTable.set(0x60, {cycles: 6, addressingFunction: this.imp, operationFunction: this.rts}); // rts imp 6
+		this.opTable.set(0x61, {cycles: 6, addressingFunction: this.izx, operationFunction: this.adc}); // adc izx 6
 		this.opTable.set(0x65, {cycles: 3, addressingFunction: this.zp0, operationFunction: this.adc}); // adc zp0 3
 		this.opTable.set(0x66, {cycles: 5, addressingFunction: this.zp0, operationFunction: this.ror}); // ror zp0 5
 		this.opTable.set(0x68, {cycles: 4, addressingFunction: this.imp, operationFunction: this.pla}); // pla imp 4
@@ -173,7 +173,7 @@ class Processor {
 		this.opTable.set(0xB1, {cycles: 5, addressingFunction: this.izy, operationFunction: this.lda}); // lda izy 5
 		this.opTable.set(0xB4, {cycles: 4, addressingFunction: this.zpx, operationFunction: this.ldy}); // ldy zpx 4
 		this.opTable.set(0xB5, {cycles: 4, addressingFunction: this.zpx, operationFunction: this.lda}); // lda zpx 4
-		this.opTable.set(0xB6, {cycles: 4, addressingFunction: this.zpx, operationFunction: this.ldx}); // ldx zpx 4
+		this.opTable.set(0xB6, {cycles: 4, addressingFunction: this.zpy, operationFunction: this.ldx}); // ldx zpy 4
 		this.opTable.set(0xB8, {cycles: 2, addressingFunction: this.imp, operationFunction: this.clv}); // clv imp 2
 		this.opTable.set(0xB9, {cycles: 4, addressingFunction: this.aby, operationFunction: this.lda}); // lda aby 4
 		this.opTable.set(0xBA, {cycles: 2, addressingFunction: this.imp, operationFunction: this.tsx}); // tsx imp 2
@@ -209,7 +209,7 @@ class Processor {
 		this.opTable.set(0xE6, {cycles: 5, addressingFunction: this.zp0, operationFunction: this.inc}); // inc zp0 5
 		this.opTable.set(0xE8, {cycles: 2, addressingFunction: this.imp, operationFunction: this.inx}); // inx imp 2
 		this.opTable.set(0xE9, {cycles: 2, addressingFunction: this.imm, operationFunction: this.sbc}); // sbc imm 2
-		this.opTable.set(0xEA, {cycles: 2, addressingFunction: this.imm, operationFunction: this.nop}); // nop imm 2
+		this.opTable.set(0xEA, {cycles: 2, addressingFunction: this.imp, operationFunction: this.nop}); // nop imp 2
 		this.opTable.set(0xEC, {cycles: 4, addressingFunction: this.abs, operationFunction: this.cpx}); // cpx abs 4
 		this.opTable.set(0xED, {cycles: 4, addressingFunction: this.abs, operationFunction: this.sbc}); // sbc abs 4
 		this.opTable.set(0xEE, {cycles: 6, addressingFunction: this.abs, operationFunction: this.inc}); // inc abs 6
@@ -237,7 +237,7 @@ class Processor {
 	}
 
 	public function fetch():Int {
-		if (this.opTable.get(currentOpcode).addressingFunction != this.imp) {
+		if (!Reflect.compareMethods(this.opTable.get(currentOpcode).addressingFunction, this.imp)) {
 			data = read(addr);
 		}
 		return data;
@@ -256,11 +256,11 @@ class Processor {
 				remainingCycle = this.opTable.get(currentOpcode).cycles;
 				var need_c1 = this.opTable.get(currentOpcode).addressingFunction();
 				var need_c2 = this.opTable.get(currentOpcode).operationFunction();
-				if (need_c1)
-					remainingCycle++;
-				if (need_c2)
-					remainingCycle++;
+				if (need_c1 && need_c2) remainingCycle++;
+			} else {
+				throw 'Unsupported opcode $currentOpcode at ' + StringTools.hex((regs.pc - 1) & 0xffff, 4);
 			}
+			regs.pc &= 0xffff;
 			unus = 1;
 		}
 
@@ -278,7 +278,7 @@ class Processor {
 		regs.x = 0;
 		regs.y = 0;
 		regs.s = 0xFD;
-		regs.p = 32;
+		regs.p = 0x24;
 
 		relAddr = 0;
 		addr = 0;
@@ -297,15 +297,15 @@ class Processor {
 
 	public function nmi() {
 		write(0x100 + regs.s, (regs.pc >> 8) & 0xff);
-		regs.s--;
+		regs.s = (regs.s - 1) & 0xff;
 		write(0x100 + regs.s, (regs.pc) & 0xff);
-		regs.s--;
+		regs.s = (regs.s - 1) & 0xff;
 
 		brek = 0;
 		unus = 1;
 		int = 1;
 		write(0x100 + regs.s, regs.p);
-		regs.s--;
+		regs.s = (regs.s - 1) & 0xff;
 
 		addr = 0xfffa;
 		regs.pc = read(addr) | (read(addr + 1) << 8);
@@ -324,7 +324,7 @@ class Processor {
 	}
 
 	function get_zero():Int {
-		return ((this.regs.p * 2) >> 1);
+		return ((this.regs.p & 2) >> 1);
 	}
 
 	function set_zero(value:Int):Int {
@@ -450,7 +450,7 @@ class Processor {
 		relAddr = read(regs.pc);
 		regs.pc++;
 		if ((relAddr & 0x80) != 0) {
-			relAddr |= 0xFF00;
+			relAddr -= 0x100;
 		}
 		return false;
 	}
@@ -472,7 +472,7 @@ class Processor {
 		regs.pc++;
 
 		addr = (hi << 8) | lo;
-		addr += regs.x;
+		addr = (addr + regs.x) & 0xffff;
 
 		if ((addr & 0xFF00) != (hi << 8)) {
 			return true;
@@ -487,7 +487,7 @@ class Processor {
 		regs.pc++;
 
 		addr = (hi << 8) | lo;
-		addr += regs.y;
+		addr = (addr + regs.y) & 0xffff;
 
 		if ((addr & 0xFF00) != (hi << 8)) {
 			return true;
@@ -503,7 +503,7 @@ class Processor {
 
 		var ptr = (hi << 8) | lo;
 
-		if (lo == 0x00fff) {
+		if (lo == 0xff) {
 			addr = (read(ptr & 0xFF00) << 8) | read(ptr + 0);
 		} else {
 			addr = (read(ptr + 1) << 8) | read(ptr + 0);
@@ -530,7 +530,7 @@ class Processor {
 		var hi = read((t + 1) & 0xFF);
 
 		addr = (hi << 8) | lo;
-		addr += regs.y;
+		addr = (addr + regs.y) & 0xffff;
 
 		if ((addr & 0xFF00) != (hi << 8)) {
 			return true;
@@ -564,7 +564,7 @@ class Processor {
 	function and() {
 		fetch();
 		regs.a = regs.a & data;
-		zero = regs.a == 0 ? 0 : 1;
+		zero = regs.a == 0 ? 1 : 0;
 		negative = (regs.a & 0x80) == 0 ? 0 : 1;
 		return true;
 	}
@@ -576,9 +576,9 @@ class Processor {
 		fetch();
 		cache = data << 1;
 		carry = (cache & 0xff00) > 0 ? 1 : 0;
-		zero = (cache & 0xff);
+		zero = (cache & 0xff) == 0 ? 1 : 0;
 		negative = (cache & 0x80) == 0 ? 0 : 1;
-		if (this.opTable.get(currentOpcode).addressingFunction == this.imp) {
+		if (Reflect.compareMethods(this.opTable.get(currentOpcode).addressingFunction, this.imp)) {
 			regs.a = cache & 0xFF;
 		} else {
 			write(addr, cache & 0xFF);
@@ -586,52 +586,33 @@ class Processor {
 		return false;
 	}
 
-	/**
-		branch on carry clear
-	**/
-	function bcc() {
-		if (carry == 0) {
-			this.remainingCycle++;
-			addr = regs.pc + relAddr;
-
-			if ((relAddr * 0xFF00) != (regs.pc & 0xFF00))
-				this.remainingCycle++;
-
+	// Taken branches cost one extra cycle, plus one when crossing a page.
+	function branch(condition:Bool):Bool {
+		if (condition) {
+			remainingCycle++;
+			addr = (regs.pc + relAddr) & 0xffff;
+			if ((addr & 0xff00) != (regs.pc & 0xff00)) remainingCycle++;
 			regs.pc = addr;
 		}
 		return false;
+	}
+
+	function bcc() {
+		return branch(carry == 0);
 	}
 
 	/**
 		branch on carry set
 	**/
 	function bcs() {
-		if (carry == 1) {
-			this.remainingCycle++;
-			addr = regs.pc + relAddr;
-
-			if ((relAddr * 0xFF00) != (regs.pc & 0xFF00))
-				this.remainingCycle++;
-
-			regs.pc = addr;
-		}
-		return false;
+		return branch(carry == 1);
 	}
 
 	/**
 		branch on equal (zero set)
 	**/
 	function beq() {
-		if (carry == 0) {
-			this.remainingCycle++;
-			addr = regs.pc + relAddr;
-
-			if ((relAddr * 0xFF00) != (regs.pc & 0xFF00))
-				this.remainingCycle++;
-
-			regs.pc = addr;
-		}
-		return false;
+		return branch(zero == 1);
 	}
 
 	/**
@@ -642,7 +623,7 @@ class Processor {
 		cache = regs.a & data;
 		zero = (cache & 0xff) == 0 ? 1 : 0;
 		negative = data > 0x7F ? 1 : 0;
-		ovflow = data > 0x39 ? 1 : 0;
+		ovflow = (data & 0x40) != 0 ? 1 : 0;
 		return false;
 	}
 
@@ -650,48 +631,21 @@ class Processor {
 		branch on minus (negative set)
 	**/
 	function bmi() {
-		if (negative == 1) {
-			this.remainingCycle++;
-			addr = regs.pc + relAddr;
-
-			if ((relAddr * 0xFF00) != (regs.pc & 0xFF00))
-				this.remainingCycle++;
-
-			regs.pc = addr;
-		}
-		return false;
+		return branch(negative == 1);
 	}
 
 	/**
 		branch on not equal (zero clear)
 	**/
 	function bne() {
-		if (zero == 0) {
-			this.remainingCycle++;
-			addr = regs.pc + relAddr;
-
-			if ((relAddr * 0xFF00) != (regs.pc & 0xFF00))
-				this.remainingCycle++;
-
-			regs.pc = addr;
-		}
-		return false;
+		return branch(zero == 0);
 	}
 
 	/**
 		branch on plus (negative clear)
 	**/
 	function bpl() {
-		if (negative == 0) {
-			this.remainingCycle++;
-			addr = regs.pc + relAddr;
-
-			if ((relAddr * 0xFF00) != (regs.pc & 0xFF00))
-				this.remainingCycle++;
-
-			regs.pc = addr;
-		}
-		return false;
+		return branch(negative == 0);
 	}
 
 	/**
@@ -702,13 +656,13 @@ class Processor {
 
 		int = 1;
 		write(0x0100 + regs.s, (regs.pc >> 8) & 0xFF);
-		regs.s--;
+		regs.s = (regs.s - 1) & 0xff;
 		write(0x100 + regs.s, regs.pc & 0xFF);
-		regs.s--;
+		regs.s = (regs.s - 1) & 0xff;
 
 		brek = 1;
 		write(0x100 + regs.s, regs.p);
-		regs.s--;
+		regs.s = (regs.s - 1) & 0xff;
 		brek = 0;
 		regs.pc = read(0xfffe) | (read(0xffff) << 8);
 		return false;
@@ -718,32 +672,14 @@ class Processor {
 		branch on overflow clear
 	**/
 	function bvc() {
-		if (ovflow == 0) {
-			this.remainingCycle++;
-			addr = regs.pc + relAddr;
-
-			if ((relAddr * 0xFF00) != (regs.pc & 0xFF00))
-				this.remainingCycle++;
-
-			regs.pc = addr;
-		}
-		return false;
+		return branch(ovflow == 0);
 	}
 
 	/**
 		branch on overflow set
 	**/
 	function bvs() {
-		if (ovflow == 1) {
-			this.remainingCycle++;
-			addr = regs.pc + relAddr;
-
-			if ((relAddr * 0xFF00) != (regs.pc & 0xFF00))
-				this.remainingCycle++;
-
-			regs.pc = addr;
-		}
-		return false;
+		return branch(ovflow == 1);
 	}
 
 	/**
@@ -799,7 +735,7 @@ class Processor {
 		carry = regs.x >= data ? 1 : 0;
 		zero = (cache & 0xff) == 0 ? 1 : 0;
 		negative = (cache & 0x80) != 0 ? 1 : 0;
-		return true;
+		return false;
 	}
 
 	/**
@@ -811,7 +747,7 @@ class Processor {
 		carry = regs.y >= data ? 1 : 0;
 		zero = (cache & 0xff) == 0 ? 1 : 0;
 		negative = (cache & 0x80) != 0 ? 1 : 0;
-		return true;
+		return false;
 	}
 
 	/**
@@ -830,7 +766,7 @@ class Processor {
 		decrement x
 	**/
 	function dex() {
-		regs.x--;
+		regs.x = (regs.x - 1) & 0xff;
 		zero = regs.x == 0 ? 1 : 0;
 		negative = (regs.x & 0x80) != 0 ? 1 : 0;
 		return false;
@@ -840,7 +776,7 @@ class Processor {
 		decrement y
 	**/
 	function dey() {
-		regs.y--;
+		regs.y = (regs.y - 1) & 0xff;
 		zero = regs.y == 0 ? 1 : 0;
 		negative = (regs.y & 0x80) != 0 ? 1 : 0;
 		return false;
@@ -873,7 +809,7 @@ class Processor {
 		increment x
 	**/
 	function inx() {
-		regs.x++;
+		regs.x = (regs.x + 1) & 0xff;
 		zero = regs.x == 0 ? 1 : 0;
 		negative = (regs.x & 0x80) != 0 ? 1 : 0;
 		return false;
@@ -883,9 +819,9 @@ class Processor {
 		increment y
 	**/
 	function iny() {
-		regs.y++;
-		zero = regs.x == 0 ? 1 : 0;
-		negative = (regs.x & 0x80) != 0 ? 1 : 0;
+		regs.y = (regs.y + 1) & 0xff;
+		zero = regs.y == 0 ? 1 : 0;
+		negative = (regs.y & 0x80) != 0 ? 1 : 0;
 		return false;
 	}
 
@@ -904,8 +840,9 @@ class Processor {
 		regs.pc--;
 
 		write(0x100 + regs.s, (regs.pc >> 8) & 0xff);
-		regs.s--;
+		regs.s = (regs.s - 1) & 0xff;
 		write(0x100 + regs.s, regs.pc & 0xff);
+		regs.s = (regs.s - 1) & 0xff;
 
 		regs.pc = addr;
 		return false;
@@ -919,7 +856,7 @@ class Processor {
 		regs.a = data;
 		zero = regs.a == 0 ? 1 : 0;
 		negative = (regs.a & 0x80) != 0 ? 1 : 0;
-		return false;
+		return true;
 	}
 
 	/**
@@ -930,7 +867,7 @@ class Processor {
 		regs.x = data;
 		zero = regs.x == 0 ? 1 : 0;
 		negative = (regs.x & 0x80) != 0 ? 1 : 0;
-		return false;
+		return true;
 	}
 
 	/**
@@ -941,7 +878,7 @@ class Processor {
 		regs.y = data;
 		zero = regs.y == 0 ? 1 : 0;
 		negative = (regs.y & 0x80) != 0 ? 1 : 0;
-		return false;
+		return true;
 	}
 
 	/**
@@ -953,7 +890,7 @@ class Processor {
 		cache = data >> 1;
 		zero = ((cache & 0xff) == 0) ? 1 : 0;
 		negative = ((cache & 0x80) != 0) ? 1 : 0;
-		if (this.opTable.get(currentOpcode).addressingFunction == this.imp) {
+		if (Reflect.compareMethods(this.opTable.get(currentOpcode).addressingFunction, this.imp)) {
 			regs.a = cache & 0xff;
 		} else {
 			write(addr, cache & 0xff);
@@ -999,7 +936,7 @@ class Processor {
 	**/
 	function pha() {
 		write(0x100 + regs.s, regs.a);
-		regs.s--;
+		regs.s = (regs.s - 1) & 0xff;
 		return false;
 	}
 
@@ -1010,7 +947,7 @@ class Processor {
 		write(0x100 + regs.s, regs.p | 16 | 32);
 		brek = 0;
 		unus = 0;
-		regs.s--;
+		regs.s = (regs.s - 1) & 0xff;
 		return false;
 	}
 
@@ -1018,7 +955,7 @@ class Processor {
 		pull accumulator
 	**/
 	function pla() {
-		regs.s++;
+		regs.s = (regs.s + 1) & 0xff;
 		regs.a = read(0x100 + regs.s);
 		zero = (regs.a == 0) ? 1 : 0;
 		negative = (regs.a & 0x80) != 0 ? 1 : 0;
@@ -1029,7 +966,7 @@ class Processor {
 		pull processor status
 	**/
 	function plp() {
-		regs.s++;
+		regs.s = (regs.s + 1) & 0xff;
 		regs.p = read(0x100 + regs.s);
 		unus = 1;
 		return false;
@@ -1041,11 +978,11 @@ class Processor {
 	function rol() {
 		fetch();
 		cache = data << 1 | carry;
-		carry = cache & 0xff00;
+		carry = (cache & 0xff00) != 0 ? 1 : 0;
 		zero = (cache & 0xff) == 0 ? 1 : 0;
-		negative = (cache & 0x80);
+		negative = (cache & 0x80) != 0 ? 1 : 0;
 
-		if (this.opTable.get(currentOpcode).addressingFunction == this.imp) {
+		if (Reflect.compareMethods(this.opTable.get(currentOpcode).addressingFunction, this.imp)) {
 			regs.a = cache & 0xff;
 		} else {
 			write(addr, cache & 0xff);
@@ -1060,9 +997,9 @@ class Processor {
 		fetch();
 		cache = carry << 7 | data >> 1;
 		carry = data & 0x1;
-		zero = (data & 0xff) == 0 ? 1 : 0;
-		negative = (data & 0x80);
-		if (this.opTable.get(currentOpcode).addressingFunction == this.imp) {
+		zero = (cache & 0xff) == 0 ? 1 : 0;
+		negative = (cache & 0x80) != 0 ? 1 : 0;
+		if (Reflect.compareMethods(this.opTable.get(currentOpcode).addressingFunction, this.imp)) {
 			regs.a = cache & 0xff;
 		} else {
 			write(addr, cache & 0xff);
@@ -1075,13 +1012,13 @@ class Processor {
 		return from interrupt
 	**/
 	function rti() {
-		regs.s++;
+		regs.s = (regs.s + 1) & 0xff;
 		regs.p = read(0x100 + regs.s);
 		regs.p &= (~16);
-		regs.p &= (~32);
-		regs.s++;
+		regs.p |= 32;
+		regs.s = (regs.s + 1) & 0xff;
 		regs.pc = read(0x100 + regs.s);
-		regs.s++;
+		regs.s = (regs.s + 1) & 0xff;
 		regs.pc |= read(0x100 + regs.s) << 8;
 
 		return false;
@@ -1091,9 +1028,9 @@ class Processor {
 		return from subroutine
 	**/
 	function rts() {
-		regs.s++;
+		regs.s = (regs.s + 1) & 0xff;
 		regs.pc = read(0x100 + regs.s);
-		regs.s++;
+		regs.s = (regs.s + 1) & 0xff;
 		regs.pc |= read(0x100 + regs.s) << 8;
 		regs.pc++;
 		return false;
@@ -1107,10 +1044,10 @@ class Processor {
 		var val = data ^ 0xff;
 
 		cache = regs.a + val + carry;
-		carry = cache & 0xff00;
+		carry = (cache & 0xff00) != 0 ? 1 : 0;
 		zero = (cache & 0xff) == 0 ? 1 : 0;
-		ovflow = (cache ^ regs.a) & (cache ^ val) & 0x80;
-		negative = cache & 0x80;
+		ovflow = ((cache ^ regs.a) & (cache ^ val) & 0x80) != 0 ? 1 : 0;
+		negative = (cache & 0x80) != 0 ? 1 : 0;
 		regs.a = cache & 0xff;
 		return true;
 	}
@@ -1169,7 +1106,7 @@ class Processor {
 	function tax() {
 		regs.x = regs.a;
 		zero = regs.x == 0 ? 1 : 0;
-		negative = regs.x & 0x80;
+		negative = (regs.x & 0x80) != 0 ? 1 : 0;
 		return false;
 	}
 
@@ -1179,7 +1116,7 @@ class Processor {
 	function tay() {
 		regs.y = regs.a;
 		zero = regs.y == 0 ? 1 : 0;
-		negative = regs.y & 0x80;
+		negative = (regs.y & 0x80) != 0 ? 1 : 0;
 		return false;
 	}
 
@@ -1189,7 +1126,7 @@ class Processor {
 	function tsx() {
 		regs.x = regs.s;
 		zero = regs.x == 0 ? 1 : 0;
-		negative = regs.x & 0x80;
+		negative = (regs.x & 0x80) != 0 ? 1 : 0;
 		return false;
 	}
 
@@ -1199,7 +1136,7 @@ class Processor {
 	function txa() {
 		regs.a = regs.x;
 		zero = regs.a == 0 ? 1 : 0;
-		negative = regs.a & 0x80;
+		negative = (regs.a & 0x80) != 0 ? 1 : 0;
 		return false;
 	}
 
@@ -1217,7 +1154,7 @@ class Processor {
 	function tya() {
 		regs.a = regs.y;
 		zero = regs.a == 0 ? 1 : 0;
-		negative = regs.a & 0x80;
+		negative = (regs.a & 0x80) != 0 ? 1 : 0;
 		return false;
 	}
 }

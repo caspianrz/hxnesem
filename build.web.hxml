@@ -3,3 +3,4 @@
 --main Emulator
 --js web/emulator.js
 --define windowSize=256x240
+--debug

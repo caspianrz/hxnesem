@@ -243,6 +243,10 @@ class Processor {
 		return data;
 	}
 
+	public function instructionComplete():Bool {
+		return remainingCycle == 0;
+	}
+
 	public function clock() {
 		if (remainingCycle == 0) {
 			currentOpcode = read(regs.pc);

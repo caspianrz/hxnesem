@@ -20,19 +20,13 @@ class Mapper000 implements IMapper {
 	}
 
 	public function cpuMapWrite(addr:Int, mappedAddr:Dynamic) {
-		if (addr >= 0x8000 && addr <= 0xffff) {
-			Reflect.setProperty(mappedAddr, "a", addr & (this.prgCount > 1 ? 0x7FFF : 0x3FFF));
-			return true;
-		}
-		return false;
+		return false; // NROM has no writable PRG banks or mapper registers.
 	}
 
 	public function ppuMapRead(addr:Int, mappedAddr:Dynamic) {
 		if (addr >= 0 && addr <= 0x1fff) {
-			if (chrCount == 0) {
-				Reflect.setProperty(mappedAddr, "a", addr);
-				return true;
-			}
+			Reflect.setProperty(mappedAddr, "a", addr);
+			return true;
 		}
 		return false;
 	}

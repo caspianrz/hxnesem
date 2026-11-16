@@ -21,6 +21,10 @@
 
 <body>
 	<canvas id="webgl"></canvas>
+	<div style="position:fixed;top:8px;left:8px;z-index:1;background:#fff;padding:8px;font:14px sans-serif">
+		<label>Load NROM (.nes): <input id="rom" type="file" accept=".nes"></label>
+		<div>Z: A · X: B · Shift: Select · Enter: Start · Arrow keys: Move</div>
+	</div>
 	<script>
 			window.addEventListener('load', function() {
 					var gl = document.getElementById("webgl");

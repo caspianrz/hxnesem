@@ -4,93 +4,70 @@ import mappers.Mapper000;
 import interfaces.IMapper;
 import haxe.io.Bytes;
 
-typedef INesHeader = {
-	var name:String;
-	var prg:Int;
-	var chr:Int;
-	var mapper1:Int;
-	var mapper2:Int;
-	var ram_size:Int;
-	var tv_system1:Int;
-	var tv_system2:Int;
-	var unused:String;
-}
-
 enum Mirror {
 	Horizontal;
 	Vertical;
 	OneScreen_Lo;
 	OneScreen_Hi;
+	FourScreen;
 }
 
 class Cartridge {
-	public var pos:Int = 0;
-	public var mapper:IMapper;
-	public var mapperID:Int = 0;
-	public var mirror:Mirror;
-
-	var prgCount = 0;
-	var chrCount = 0;
+	public var pos(default, null):Int = 16;
+	public var mapper(default, null):IMapper;
+	public var mapperID(default, null):Int;
+	public var mirror(default, null):Mirror;
 	var prgMemory:Bytes;
 	var chrMemory:Bytes;
+	var prgRam:Bytes = Bytes.alloc(8192);
 
 	public function new(bytes:Bytes) {
-		var header:INesHeader = {
-			name: bytes.getString(0, 4),
-			prg: bytes.get(pos += 4),
-			chr: bytes.get(pos += 1),
-			mapper1: bytes.get(pos += 1),
-			mapper2: bytes.get(pos += 1),
-			ram_size: bytes.get(pos += 1),
-			tv_system1: bytes.get(pos += 1),
-			tv_system2: bytes.get(pos += 1),
-			unused: bytes.getString(pos, 5)
-		};
-		pos += 5;
-
-		if ((header.mapper1 & 0x04) != 0)
-			pos += 512;
-
-		mapperID = ((header.mapper2 >> 4) << 4) | (header.mapper1 >> 4);
-		mirror = (header.mapper1 & 0x01) != 0 ? Vertical : Horizontal;
-
-		var fileType = 1;
-
-		if (fileType == 0) {} else if (fileType == 1) {
-			prgCount = header.prg;
-			var prgData:String = bytes.getString(pos, prgCount * 16384);
-			pos += prgCount * 16384;
-			prgMemory = Bytes.ofString(prgData);
-
-			chrCount = header.chr;
-			var chrData:String = bytes.getString(pos, chrCount * 8192);
-			pos += chrCount * 8192;
-			chrMemory = Bytes.ofString(chrData);
-		} else if (fileType == 2) {}
-
-		switch mapperID {
-			case 0:
-				mapper = new Mapper000(prgCount, chrCount);
-		}
+		if (bytes.length < 16 || bytes.getString(0, 4) != 'NES\x1a')
+			throw 'Invalid iNES header';
+		var flags6 = bytes.get(6);
+		var flags7 = bytes.get(7);
+		if ((flags7 & 0x0c) == 0x08) throw 'NES 2.0 ROMs are not supported';
+		mapperID = (flags7 & 0xf0) | (flags6 >> 4);
+		if (mapperID != 0) throw 'Unsupported mapper: $mapperID';
+		var prgCount = bytes.get(4);
+		var chrCount = bytes.get(5);
+		if (prgCount < 1 || prgCount > 2 || chrCount > 1) throw 'Invalid NROM bank counts';
+		mirror = (flags6 & 8) != 0 ? FourScreen : ((flags6 & 1) != 0 ? Vertical : Horizontal);
+		if ((flags6 & 4) != 0) pos += 512;
+		if (bytes.length < pos + prgCount * 16384 + chrCount * 8192) throw 'Truncated iNES ROM';
+		if ((flags6 & 4) != 0) prgRam.blit(0x1000, bytes, 16, 512);
+		prgMemory = bytes.sub(pos, prgCount * 16384);
+		pos += prgMemory.length;
+		chrMemory = chrCount == 0 ? Bytes.alloc(8192) : bytes.sub(pos, 8192);
+		pos += chrCount * 8192;
+		mapper = new Mapper000(prgCount, chrCount);
 	}
 
-	public function ppuRead(addr:Int, data:Dynamic) {
-		var map_addr = {a: 0};
-		if (mapper.ppuMapRead(addr, map_addr)) {
-			data = chrMemory.get(map_addr.a);
-			return true;
-		}
-
-		return false;
+	// Unmapped reads use -1; bytes are always in the range 0..255.
+	public function cpuRead(addr:Int):Int {
+		if (addr >= 0x6000 && addr <= 0x7fff) return prgRam.get(addr & 0x1fff);
+		var mapped = {a: 0};
+		return mapper.cpuMapRead(addr, mapped) ? prgMemory.get(mapped.a) : -1;
 	}
 
-	public function ppuWrite(addr:Int, data:Int) {
-		var map_addr = {a: 0};
-		if (mapper.ppuMapRead(addr, map_addr)) {
-			chrMemory.set(map_addr.a, data);
+	public function cpuWrite(addr:Int, data:Int):Bool {
+		if (addr >= 0x6000 && addr <= 0x7fff) {
+			prgRam.set(addr & 0x1fff, data & 0xff);
 			return true;
 		}
+		// NROM PRG is ROM: writes are consumed without changing it.
+		return addr >= 0x8000 && addr <= 0xffff;
+	}
 
-		return false;
+	public function ppuRead(addr:Int):Int {
+		var mapped = {a: 0};
+		return mapper.ppuMapRead(addr, mapped) ? chrMemory.get(mapped.a) : -1;
+	}
+
+	public function ppuWrite(addr:Int, data:Int):Bool {
+		var mapped = {a: 0};
+		if (!mapper.ppuMapWrite(addr, mapped)) return false;
+		chrMemory.set(mapped.a, data & 0xff);
+		return true;
 	}
 }

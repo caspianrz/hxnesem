@@ -5,6 +5,8 @@ import haxe.io.Bytes;
 class Bus {
 	public var cpu:Processor;
 	public var ppu:PPU;
+	public var apu:APU;
+	var dmcStall = 0;
 	public var ram:Bytes = Bytes.alloc(0x800);
 	// A, B, Select, Start, Up, Down, Left, Right (bits 0..7).
 	public var controllers:Array<Int> = [0, 0];
@@ -23,6 +25,7 @@ class Bus {
 	public function new() {
 		cpu = new Processor(this);
 		ppu = new PPU(null);
+		apu = new APU(read, function(cycles) dmcStall += cycles);
 	}
 
 	public function write(address:Int, data:Int):Void {
@@ -37,6 +40,8 @@ class Bus {
 			dmaRead = true;
 			dmaActive = true;
 			dmaDummy = cpuOddCycle ? 2 : 1;
+		} else if (address <= 0x4013 || address == 0x4015 || address == 0x4017) {
+			apu.write(address, data);
 		} else if (address == 0x4016) {
 			controllerStrobe = (data & 1) != 0;
 			controllerShift = controllers.copy();
@@ -51,6 +56,7 @@ class Bus {
 		}
 		if (address <= 0x1fff) return ram.get(address & 0x7ff);
 		if (address <= 0x3fff) return ppu.cpuRead(address & 7);
+		if (address == 0x4015) return apu.readStatus();
 		if (address == 0x4016 || address == 0x4017) {
 			var port = address & 1;
 			if (controllerStrobe) return controllers[port] & 1;
@@ -72,6 +78,8 @@ class Bus {
 		cpuOddCycle = dmaActive = false;
 		controllerStrobe = false;
 		controllerShift = [0, 0];
+		dmcStall = 0;
+		apu.reset();
 		ppu.reset();
 		cpu.reset();
 	}
@@ -79,7 +87,9 @@ class Bus {
 	public function clock():Void {
 		ppu.clock();
 		if (systemClockCounter == 0) {
-			if (dmaActive) {
+			apu.clock();
+			if (dmcStall > 0) dmcStall--;
+			else if (dmaActive) {
 				if (dmaDummy > 0) dmaDummy--;
 				else if (dmaRead) {
 					dmaData = read(dmaPage | dmaOffset);
@@ -95,6 +105,7 @@ class Bus {
 					ppu.nmiPending = false;
 					cpu.nmi();
 				}
+				else if ((apu.irqPending || (cartridge != null && cartridge.mapper.irqPending)) && cpu.instructionComplete()) cpu.irq();
 				cpu.clock();
 			}
 			cpuOddCycle = !cpuOddCycle;

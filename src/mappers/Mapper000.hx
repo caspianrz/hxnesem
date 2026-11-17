@@ -3,6 +3,12 @@ package mappers;
 import interfaces.IMapper;
 
 class Mapper000 implements IMapper {
+	public var irqPending = false;
+	public var ramEnabled = true;
+	public var ramWritable = true;
+	public var mirror:Null<model.Cartridge.Mirror> = null;
+	public function scanline() {}
+
 	final prgCount:Int;
 	final chrCount:Int;
 
@@ -19,7 +25,7 @@ class Mapper000 implements IMapper {
 		return false;
 	}
 
-	public function cpuMapWrite(addr:Int, mappedAddr:Dynamic) {
+	public function cpuMapWrite(addr:Int, mappedAddr:Dynamic, data:Int = 0) {
 		return false; // NROM has no writable PRG banks or mapper registers.
 	}
 

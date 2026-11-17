@@ -64,8 +64,66 @@ class CoreTest {
 		equal(new Cartridge(rom(0, 4)).cpuRead(0x8000), 0x4c, 'trainer skipped');
 		rejects(Bytes.alloc(16), 'bad header');
 		rejects(bytes.sub(0, 20), 'truncated ROM');
-		var unsupported = rom(); unsupported.set(6, 0x10);
+		var unsupported = rom(); unsupported.set(6, 0x50);
 		rejects(unsupported, 'unsupported mapper');
+
+		// Distinct bytes in each 8K PRG and 1K CHR bank reveal mapping errors.
+		function banked(id:Int):Cartridge {
+			var data = rom(4, id << 4, 4);
+			for (i in 0...8) data.fill(16 + i * 8192, 8192, i);
+			for (i in 0...32) data.fill(16 + 65536 + i * 1024, 1024, i);
+			return new Cartridge(data);
+		}
+		function serial(c:Cartridge, addr:Int, value:Int) {
+			for (i in 0...5) c.cpuWrite(addr, (value >> i) & 1);
+		}
+		var ux = banked(2);
+		equal(ux.cpuRead(0xc000), 6, 'UxROM fixed final bank');
+		ux.cpuWrite(0x8000, 2);
+		equal(ux.cpuRead(0x8000), 4, 'UxROM selected bank');
+		var cnData = rom(4, 0x30, 2);
+		for (i in 0...4) cnData.fill(16 + 32768 + i * 8192, 8192, i);
+		var cn = new Cartridge(cnData); cn.cpuWrite(0x9000, 3);
+		equal(cn.ppuRead(0), 3, 'CNROM CHR switch');
+		var mmc1 = banked(1);
+		serial(mmc1, 0xe000, 2);
+		equal(mmc1.cpuRead(0x8000), 4, 'MMC1 serial PRG switch');
+		equal(mmc1.cpuRead(0xc000), 6, 'MMC1 fixed last bank');
+		serial(mmc1, 0x8000, 0x1e); serial(mmc1, 0xa000, 3); serial(mmc1, 0xc000, 5);
+		equal(mmc1.ppuRead(0), 12, 'MMC1 lower 4K CHR bank');
+		equal(mmc1.ppuRead(0x1000), 20, 'MMC1 upper 4K CHR bank');
+		equal(mmc1.mirror, model.Cartridge.Mirror.Vertical, 'MMC1 mirroring');
+		serial(mmc1, 0xe000, 16); mmc1.cpuWrite(0x6000, 99);
+		equal(mmc1.cpuRead(0x6000), 0, 'MMC1 RAM disabled');
+		mmc1.cpuWrite(0x8000, 0x80);
+		var mmc3 = banked(4);
+		mmc3.cpuWrite(0x8000, 6); mmc3.cpuWrite(0x8001, 3);
+		equal(mmc3.cpuRead(0x8000), 3, 'MMC3 PRG register');
+		mmc3.cpuWrite(0x8000, 0x46);
+		equal(mmc3.cpuRead(0x8000), 6, 'MMC3 inverted fixed PRG');
+		equal(mmc3.cpuRead(0xc000), 3, 'MMC3 inverted switchable PRG');
+		mmc3.cpuWrite(0x8000, 0); mmc3.cpuWrite(0x8001, 7);
+		equal(mmc3.ppuRead(0), 6, 'MMC3 aligned 2K CHR');
+		equal(mmc3.ppuRead(0x400), 7, 'MMC3 second 1K CHR');
+		mmc3.cpuWrite(0x8000, 0x80);
+		equal(mmc3.ppuRead(0x1000), 6, 'MMC3 CHR inversion');
+		mmc3.cpuWrite(0xa001, 0xc0); mmc3.cpuWrite(0x6000, 99);
+		equal(mmc3.cpuRead(0x6000), 0, 'MMC3 RAM write protection');
+		mmc3.cpuWrite(0xc000, 1); mmc3.cpuWrite(0xc001, 0); mmc3.cpuWrite(0xe001, 0);
+		mmc3.mapper.scanline(); equal(mmc3.mapper.irqPending, false, 'MMC3 IRQ reload');
+		mmc3.mapper.scanline(); equal(mmc3.mapper.irqPending, true, 'MMC3 IRQ assertion');
+		mmc3.cpuWrite(0xe000, 0); equal(mmc3.mapper.irqPending, false, 'MMC3 IRQ acknowledge');
+		var irqPPU = new PPU(mmc3); irqPPU.cpuWrite(1, 8);
+		mmc3.cpuWrite(0xe001, 0);
+		for (_ in 0...602) irqPPU.clock();
+		equal(mmc3.mapper.irqPending, true, 'PPU clocks MMC3 scanline IRQ');
+
+		var irqROM = rom();
+		irqROM.set(16 + 0x3ffe, 0x34); irqROM.set(16 + 0x3fff, 0x92);
+		var irqBus = new Bus(); irqBus.insertCartridge(new Cartridge(irqROM));
+		irqBus.cpu.int = 0; irqBus.cpu.irq();
+		equal(irqBus.cpu.regs.pc, 0x9234, 'IRQ uses IRQ vector');
+		equal(irqBus.read(0x100 + ((irqBus.cpu.regs.s + 1) & 255)) & 4, 0, 'IRQ saves previous interrupt flag');
 
 		var p = new PPU(ramCart);
 		p.ppuWrite(0x2000, 0x12);

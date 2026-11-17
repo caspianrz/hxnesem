@@ -250,6 +250,8 @@ class PPU {
 			if (cycle == 257) v = (v & ~0x041f) | (t & 0x041f);
 			if (scanline == -1 && cycle >= 280 && cycle <= 304) v = (v & ~0x7be0) | (t & 0x7be0);
 		}
+		if (rendering && scanline >= -1 && scanline < 240 && cycle == 260 && cartridge != null)
+			cartridge.mapper.scanline();
 		// Odd NTSC frames omit the final pre-render dot when rendering is enabled.
 		if (scanline == -1 && cycle == 339 && oddFrame && rendering) {
 			cycle = 0;

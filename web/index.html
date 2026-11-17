@@ -2,43 +2,25 @@
 <html>
 
 <head>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>NES Emulator</title>
 	<style>
-		body {
-			margin: 0px;
-			padding: 0px;
-		}
-
-		#webgl {
-			position: absolute;
-			left: 50%;
-			top: 50%;
-			transform: translate(-50%, -50%);
-			width:100%;
-			height:100%;
-		}
+		* { box-sizing: border-box; }
+		html, body { margin: 0; width: 100%; height: 100%; }
+		body { display: flex; flex-direction: column; font: 14px sans-serif; background: #111; }
+		#loader { flex: none; padding: 12px; background: #fff; line-height: 1.6; }
+		#rom { max-width: 100%; }
+		#screen { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+		#webgl { display: block; width: 100%; height: 100%; }
 	</style>
 </head>
 
 <body>
-	<canvas id="webgl"></canvas>
-	<div style="position:fixed;top:8px;left:8px;z-index:1;background:#fff;padding:8px;font:14px sans-serif">
-		<label>Load NROM (.nes): <input id="rom" type="file" accept=".nes"></label>
+	<div id="loader">
+		<label>Load NES ROM (mappers 0–4): <input id="rom" type="file" accept=".nes"></label>
 		<div>Z: A · X: B · Shift: Select · Enter: Start · Arrow keys: Move</div>
 	</div>
-	<script>
-			window.addEventListener('load', function() {
-					var gl = document.getElementById("webgl");
-					gl.focus();
-			})
-			window.addEventListener('resize', function () {
-					var gl = document.getElementById("webgl");
-					gl.style.width = window.innerWidth + "px";
-					gl.style.height = window.innerHeight + "px";
-					gl.style.left = "50%";
-					gl.style.top = "50%";
-					gl.style.transform = "translate(-50%, -50%)";
-			});
-	</script>
+	<main id="screen"><canvas id="webgl" tabindex="0"></canvas></main>
 	<script src="./emulator.js"></script>
 </body>
 

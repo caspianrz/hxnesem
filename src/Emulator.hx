@@ -13,15 +13,21 @@ class Emulator extends hxd.App {
 	public static var bmp:Bitmap;
 	public static var resTime:Float = 0;
 	static var loaded = false;
+	static var audio:audio.AudioOutput;
 
 	public static function loadRom(bytes:haxe.io.Bytes) {
 		var cartridge = new Cartridge(bytes);
+		if (audio != null) audio.reset();
 		bus.insertCartridge(cartridge);
 		loaded = true;
 		resTime = 0;
 	}
 
 	override function init() {
+		#if js
+		audio = new audio.AudioOutput(bus.apu.sampleRate);
+		bus.apu.onSample = audio.push;
+		#end
 		s2d.scaleMode = ScaleMode.LetterBox(256, 240);
 		sp = new Pixels(256, 240, bus.ppu.screen, PixelFormat.RGBA, 0);
 		// Tile.fromPixels pads to a square; keep the texture the same size as the framebuffer.
@@ -64,6 +70,7 @@ class Emulator extends hxd.App {
 			changed = true;
 		}
 		if (changed) bmp.tile.getTexture().uploadPixels(sp);
+		if (audio != null) audio.flush();
 	}
 
 	static function main() {

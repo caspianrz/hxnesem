@@ -290,12 +290,12 @@ class Processor {
 
 	public function irq() {
 		if (int == 0) {
-			nmi();
+			nmi(0xfffe);
 			remainingCycle = 7;
 		}
 	}
 
-	public function nmi() {
+	public function nmi(vector:Int = 0xfffa) {
 		write(0x100 + regs.s, (regs.pc >> 8) & 0xff);
 		regs.s = (regs.s - 1) & 0xff;
 		write(0x100 + regs.s, (regs.pc) & 0xff);
@@ -303,11 +303,11 @@ class Processor {
 
 		brek = 0;
 		unus = 1;
-		int = 1;
 		write(0x100 + regs.s, regs.p);
+		int = 1;
 		regs.s = (regs.s - 1) & 0xff;
 
-		addr = 0xfffa;
+		addr = vector;
 		regs.pc = read(addr) | (read(addr + 1) << 8);
 		remainingCycle = 8;
 	}

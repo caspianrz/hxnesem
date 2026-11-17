@@ -14,11 +14,15 @@ class Emulator extends hxd.App {
 	public static var resTime:Float = 0;
 	static var loaded = false;
 	static var paused = false;
+	static var online = false;
+	static var romBytes:haxe.io.Bytes;
 	static var controllerMasks:Array<Int> = [0, 0];
 	static var audio:audio.AudioOutput;
 
 	public static function loadRom(bytes:haxe.io.Bytes) {
+		if (online) throw 'Disconnect netplay before loading a ROM';
 		var cartridge = new Cartridge(bytes);
+		romBytes = bytes;
 		if (audio != null) audio.reset();
 		bus.insertCartridge(cartridge);
 		loaded = true;
@@ -41,17 +45,42 @@ class Emulator extends hxd.App {
 		#if js
 		var api = {
 			loadRom: function(data:js.lib.ArrayBuffer) loadRom(haxe.io.Bytes.ofData(data)),
-			setController: function(mask:Int, port:Int = 0) { if (port >= 0 && port < 2) { controllerMasks[port] = mask & 255; bus.controllers[port] = mask & 255; } },
+			setController: function(mask:Int, port:Int = 0) { if (port >= 0 && port < 2) { controllerMasks[port] = mask & 255; if (!online) bus.controllers[port] = mask & 255; } },
 			setVolume: function(value:Float) audio.setVolume(value),
 			setMuted: function(value:Bool) audio.setMuted(value),
-			setPaused: function(value:Bool) setPaused(value),
+			setPaused: function(value:Bool) { if (online) throw 'Pause is unavailable during netplay'; setPaused(value); },
 			reset: function() {
+				if (online) throw 'Disconnect netplay before resetting';
 				if (!loaded) return;
 				audio.reset(); bus.reset(); resTime = 0; controllerMasks = [0, 0];
 			},
 			step: stepInstruction,
+			netplayVersion: netplay.State.VERSION,
+			romHash: function() return loaded ? haxe.crypto.Sha256.make(romBytes).toHex() : '',
+			localInput: function(port:Int = 0) return port >= 0 && port < 2 ? controllerMasks[port] : 0,
+			netplayStart: function() {
+				if (!loaded) throw 'Load the server ROM before connecting';
+				bus.insertCartridge(new Cartridge(romBytes));
+				online = true; paused = false; resTime = 0; controllerMasks = [0, 0]; audio.reset();
+			},
+			netplayStop: function() {
+				online = false; setPaused(false);
+			},
+			netplaySave: function() return netplay.State.save(bus),
+			netplayLoad: function(state:String) {
+				if (!online) throw 'Netplay is not active';
+				netplay.State.load(bus, state); audio.reset();
+			},
+			netplayFrame: function(inputs:Array<Int>, audible:Bool) {
+				if (!online) throw 'Netplay is not active';
+				var listener = bus.apu.onSample;
+				if (!audible) bus.apu.onSample = null;
+				try { netplay.State.frame(bus, inputs); }
+				catch (error:Dynamic) { bus.apu.onSample = listener; throw error; }
+				bus.apu.onSample = listener;
+			},
 			getState: function() return {
-				loaded: loaded, paused: paused, mapper: loaded ? bus.mapperID() : -1,
+				loaded: loaded, paused: paused, netplay: online, mapper: loaded ? bus.mapperID() : -1,
 				pc: bus.cpu.regs.pc, a: bus.cpu.regs.a, x: bus.cpu.regs.x, y: bus.cpu.regs.y,
 				sp: bus.cpu.regs.s, status: bus.cpu.regs.p, cycles: bus.cpu.timer,
 				instructions: loaded ? debug.Disassembler.list(bus, bus.cpu.regs.pc) : []
@@ -67,6 +96,11 @@ class Emulator extends hxd.App {
 
 	override function update(dt:Float) {
 		#if js
+		if (online) {
+			bmp.tile.getTexture().uploadPixels(sp);
+			audio.flush();
+			return;
+		}
 		bus.controllers[0] = controllerMasks[0];
 		bus.controllers[1] = controllerMasks[1];
 		#else
@@ -110,6 +144,7 @@ class Emulator extends hxd.App {
 	}
 
 	static function stepInstruction() {
+		if (online) throw 'Disconnect netplay before stepping';
 		if (!loaded) return;
 		setPaused(true);
 		debug.CPUDebugger.step(bus);

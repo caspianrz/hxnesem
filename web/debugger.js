@@ -23,14 +23,14 @@
       let api;
       try { api = getAPI(); state = api ? api.getState() : null; }
       catch (_) { state = null; }
-      buttons.forEach(button => { button.disabled = !state || !state.loaded; });
+      buttons.forEach(button => { button.disabled = !state || !state.loaded || state.netplay; });
       pause.textContent = state && state.paused ? 'Resume' : 'Pause';
       if (!state || !state.loaded) {
         note.textContent = api ? 'Load a ROM to inspect the CPU.' : 'The main emulator is not connected. Open this window from CPU inspector.';
         table.replaceChildren(); lastRows = '';
         return;
       }
-      note.textContent = state.paused ? 'Paused · next instruction highlighted. Step to advance.' : 'Live · pause to inspect or step. Next instruction highlighted.';
+      note.textContent = state.netplay ? 'Netplay · live inspection only. Disconnect to pause, reset or step.' : state.paused ? 'Paused · next instruction highlighted. Step to advance.' : 'Live · pause to inspect or step. Next instruction highlighted.';
       const registers = { PC: hex(state.pc, 4), A: hex(state.a), X: hex(state.x), Y: hex(state.y), SP: hex(state.sp), P: hex(state.status), Mapper: String(state.mapper), Cycles: String(state.cycles) };
       for (const [name, value] of Object.entries(registers)) element.querySelector(`[data-register="${name}"]`).textContent = value;
       element.querySelector('.cpu-flags').textContent = 'NV–BDIZC · ' + state.status.toString(2).padStart(8, '0');

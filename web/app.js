@@ -7,6 +7,7 @@
   const saved = config.load(storage);
   let settings = saved.settings;
   let api = null;
+  let netClient = null;
   let binding = null;
   let restorePlayback = false;
   let fileRequest = 0;
@@ -66,9 +67,13 @@
   function stateChanged() {
     if (!api) return;
     const state = api.getState();
-    $('pause').disabled = $('reset').disabled = !state.loaded;
+    const connected = !!(netClient && netClient.connected);
+    $('pause').disabled = $('reset').disabled = !state.loaded || connected;
+    $('netplay-open').disabled = false;
+    $('netplay-connect').disabled = !state.loaded || connected;
+    $('netplay-disconnect').disabled = !connected;
     $('pause').textContent = state.paused ? 'Resume' : 'Pause';
-    $('run-state').textContent = state.loaded ? (state.paused ? 'Paused' : 'Running') + ' · Mapper ' + state.mapper : 'Ready';
+    $('run-state').textContent = state.loaded ? (state.netplay ? 'Netplay · P' + ((netClient && netClient.session ? netClient.session.slot : 0) + 1) : state.paused ? 'Paused' : 'Running') + ' · Mapper ' + state.mapper : 'Ready';
     $('empty-state').hidden = state.loaded;
     if (state.paused) clearInput();
     if (inspector) inspector.refresh();
@@ -80,6 +85,7 @@
   }
   async function loadFile(file) {
     if (!file) return;
+    if (netClient && netClient.connected) { notify('Disconnect netplay before changing ROMs.', true); return; }
     if (!api) { notify('The emulator is still starting. Try again in a moment.', true); return; }
     const request = ++fileRequest;
     if (!/\.nes$/i.test(file.name)) { notify('Choose a .nes ROM file.', true); return; }
@@ -99,9 +105,35 @@
   }
   function attach() {
     if (!window.nes) return;
-    api = window.nes; refreshAudio(); stateChanged();
+    api = window.nes;
+    if (!netClient) netClient = new window.NesNetplay.Client(api, (text, client) => {
+      $('netplay-status').textContent = text;
+      $('netplay-server').disabled = $('netplay-room').disabled = $('netplay-token').disabled = client.connected;
+      clearInput(); notify(text); stateChanged();
+    });
+    refreshAudio(); stateChanged();
     notify(saved.persistent ? 'Open a .nes ROM to begin.' : 'Open a ROM to begin. Settings may not persist in this browser.');
   }
+  $('netplay-server').value = (location.protocol === 'https:' ? 'wss://' : 'ws://') + (location.host || '127.0.0.1:8080') + '/netplay';
+  try {
+    const previous = JSON.parse(storage.getItem('hxnesem.netplay.v1'));
+    if (previous && typeof previous.server === 'string' && typeof previous.room === 'string') {
+      $('netplay-server').value = previous.server; $('netplay-room').value = previous.room;
+    }
+  } catch (_) {}
+  $('netplay-open').addEventListener('click', () => { clearInput(); $('netplay-dialog').showModal(); });
+  $('netplay-dialog').addEventListener('close', () => { clearInput(); $('webgl').focus(); });
+  $('netplay-form').addEventListener('submit', event => {
+    event.preventDefault();
+    if (!netClient) return;
+    try {
+      const server = $('netplay-server').value.trim(); const room = $('netplay-room').value.trim();
+      netClient.connect(server, room, $('netplay-token').value);
+      try { storage.setItem('hxnesem.netplay.v1', JSON.stringify({ server, room })); } catch (_) {}
+    } catch (error) { $('netplay-status').textContent = error.message || String(error); }
+    stateChanged();
+  });
+  $('netplay-disconnect').addEventListener('click', () => { if (netClient) netClient.disconnect(); stateChanged(); });
   $('open-rom').addEventListener('click', () => $('rom').click());
   $('empty-open').addEventListener('click', () => $('rom').click());
   $('rom').addEventListener('change', event => { const file = event.target.files[0]; event.target.value = ''; loadFile(file); });
@@ -111,7 +143,7 @@
   $('volume').addEventListener('input', () => { settings.volume = Number($('volume').value) / 100; refreshAudio(); persist(); });
   $('settings-open').addEventListener('click', () => {
     clearInput(); binding = null;
-    restorePlayback = !!(api && api.getState().loaded && !api.getState().paused);
+    restorePlayback = !!(api && api.getState().loaded && !api.getState().paused && !api.getState().netplay);
     if (restorePlayback) api.setPaused(true);
     renderMappings(); dialog.showModal(); stateChanged();
   });
@@ -137,7 +169,7 @@
       } catch (error) { $('mapping-message').textContent = error.message; }
       return;
     }
-    if (dialog.open || !api || !api.getState().loaded || api.getState().paused) return;
+    if (dialog.open || $('netplay-dialog').open || !api || !api.getState().loaded || api.getState().paused) return;
     if (event.target !== $('webgl') && event.target !== document.body && event.target !== $('screen')) return;
     // Leave browser shortcuts intact. Modifier keys can still be mapped on their own.
     if (event.metaKey || event.ctrlKey || event.altKey) {
@@ -177,8 +209,8 @@
   screen.addEventListener('dragover', event => { event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; });
   screen.addEventListener('drop', event => { event.preventDefault(); loadFile(event.dataTransfer.files[0]); });
   window.addEventListener('nes-ready', attach);
-  window.addEventListener('nes-error', event => { clearInput(); notify('CPU paused: ' + event.detail, true); stateChanged(); });
-  window.addEventListener('pagehide', () => { clearInput(); if (inspector) inspector.dispose(); });
+  window.addEventListener('nes-error', event => { if (netClient && netClient.connected) netClient.disconnect('Emulation stopped.'); clearInput(); notify('CPU paused: ' + event.detail, true); stateChanged(); });
+  window.addEventListener('pagehide', () => { if (netClient) netClient.disconnect(); clearInput(); if (inspector) inspector.dispose(); });
   setInterval(() => { if (api && !document.hidden) stateChanged(); }, 250);
   refreshAudio(); renderMappings();
   if (window.nes) attach();

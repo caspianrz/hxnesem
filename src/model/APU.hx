@@ -128,7 +128,8 @@ class APU {
 		}
 		if (cycles == 0) { pulse1.clock(); pulse2.clock(); }
 		triangle.clock(); noise.clock(); dmc.clock();
-		if (onSample != null) {
+		{
+			// Always advance audio state, even on the headless server or during replay.
 			// Average CPU-rate output before resampling; the host receives bounded PCM.
 			sampleSum += output(); sampleCount++;
 			samplePhase += sampleRate;
@@ -138,7 +139,7 @@ class APU {
 				highPass = hpCoefficient * (highPass + input - previousInput);
 				previousInput = input;
 				lowPass += lpCoefficient * (highPass - lowPass);
-				onSample(Math.max(-1, Math.min(1, lowPass * 1.5)));
+				if (onSample != null) onSample(Math.max(-1, Math.min(1, lowPass * 1.5)));
 				sampleSum = 0; sampleCount = 0;
 			}
 		}

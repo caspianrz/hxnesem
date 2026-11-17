@@ -1,0 +1,14 @@
+{
+  "name": "hxnesem",
+  "private": true,
+  "version": "0.1.0",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build:server": "haxe build.server.hxml",
+    "build:web": "haxe build.web.hxml",
+    "start": "node server/index.cjs",
+    "test:netplay": "haxe build.server.hxml && node --test tests/NetplayTest.cjs",
+    "test:settings": "node tests/SettingsTest.cjs"
+  },
+  "dependencies": { "ws": "^8.18.3" }
+}

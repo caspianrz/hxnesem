@@ -70,3 +70,8 @@ body.debug-window { display: block; height: auto; min-height: 100%; }
 @media (max-width: 1050px) { .toolbar { gap: 14px; } .utilities { margin-left: 0; } }
 @media (max-width: 760px) { .workspace { flex-direction: column; overflow: auto; } .cpu-panel { width: 100%; border-left: 0; border-top: 1px solid var(--border); flex: 0 0 420px; } #screen { min-height: 280px; flex: 1 0 280px; } .toolbar { padding: 12px; gap: 12px; } .rom-bar, .status-bar { padding: 8px 12px; } .toolbar-actions { gap: 6px; } button { padding: 6px 9px; } #control-summary { display: none; } .empty-state { padding: 16px; } .screen-mark { display: none; } .empty-state small { margin-top: 16px; } }
 @media (prefers-reduced-motion: no-preference) { button { transition: background .12s ease, border-color .12s ease; } }
+
+.netplay-form > label { display: block; margin: 0 0 5px; color: var(--muted); }
+.netplay-form > input { width: 100%; padding: 9px 10px; margin: 0 0 16px; border: 1px solid var(--border); border-radius: 6px; color: var(--text); background: var(--bg); }
+.netplay-form > input:disabled { opacity: .5; }
+.netplay-form #netplay-status { margin: 6px 0 20px; color: var(--accent); }

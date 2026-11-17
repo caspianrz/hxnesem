@@ -17,6 +17,8 @@ enum Mirror {
 
 class Cartridge {
 	public var pos(default, null):Int = 16;
+	public var contentHash(default, null):String;
+	public var chrIsRam(default, null):Bool;
 	public var mapper(default, null):Mapper000;
 	public var mapperID(default, null):Int;
 	public var mirror(get, never):Mirror;
@@ -28,6 +30,7 @@ class Cartridge {
 	public function new(bytes:Bytes) {
 		if (bytes.length < 16 || bytes.getString(0, 4) != 'NES\x1a')
 			throw 'Invalid iNES header';
+		contentHash = haxe.crypto.Sha256.make(bytes).toHex();
 		var flags6 = bytes.get(6);
 		var flags7 = bytes.get(7);
 		if ((flags7 & 0x0c) == 0x08) throw 'NES 2.0 ROMs are not supported';
@@ -35,6 +38,7 @@ class Cartridge {
 		if (mapperID > 4) throw 'Unsupported mapper: $mapperID';
 		var prgCount = bytes.get(4);
 		var chrCount = bytes.get(5);
+		chrIsRam = chrCount == 0;
 		if (prgCount < 1 || (mapperID == 0 && (prgCount > 2 || chrCount > 1)) || (mapperID == 3 && prgCount > 2) || (mapperID == 1 && prgCount > 16)) throw 'Unsupported mapper bank counts';
 		headerMirror = (flags6 & 8) != 0 ? FourScreen : ((flags6 & 1) != 0 ? Vertical : Horizontal);
 		if ((flags6 & 4) != 0) pos += 512;

@@ -21,6 +21,7 @@
       <button id="mute" type="button" aria-pressed="false">Mute</button>
       <label class="volume-label" for="volume">Volume <output id="volume-value" for="volume">70%</output></label>
       <input id="volume" type="range" min="0" max="100" value="70" aria-label="Volume">
+      <button id="netplay-open" type="button" disabled>Netplay</button>
       <button id="settings-open" type="button">Controls</button>
       <button id="debug-toggle" type="button" aria-expanded="false" aria-controls="cpu-panel">CPU inspector</button>
     </div>
@@ -59,8 +60,24 @@
       <button id="restore-controls" type="button">Restore default controls</button>
     </div>
   </dialog>
+  <dialog id="netplay-dialog" aria-labelledby="netplay-title">
+    <form method="dialog" class="panel-heading"><h2 id="netplay-title">Rollback netplay</h2><button aria-label="Close netplay">×</button></form>
+    <form id="netplay-form" class="settings-body netplay-form">
+      <p>Load the server’s ROM on each computer, then connect both players to the same room. Each player uses their Player 1 key mapping.</p>
+      <label for="netplay-server">Server URL</label>
+      <input id="netplay-server" type="text" placeholder="ws://localhost:8080/netplay" required autocomplete="off" spellcheck="false">
+      <label for="netplay-room">Room</label>
+      <input id="netplay-room" type="text" value="main" pattern="[a-zA-Z0-9_-]{1,32}" maxlength="32" required autocomplete="off" spellcheck="false">
+      <label for="netplay-token">Server token (if required)</label>
+      <input id="netplay-token" type="password" autocomplete="off">
+      <p id="netplay-status" role="status">Single-player · not connected</p>
+      <div class="toolbar-actions"><button id="netplay-connect" class="primary" type="submit">Connect</button><button id="netplay-disconnect" type="button" disabled>Single-player / disconnect</button></div>
+    </form>
+  </dialog>
   <script src="settings.js"></script>
   <script src="debugger.js"></script>
+  <script src="rollback.js"></script>
+  <script src="netplay.js"></script>
   <script src="app.js"></script>
   <script src="emulator.js"></script>
 </body>

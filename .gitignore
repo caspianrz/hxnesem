@@ -2,3 +2,5 @@
 out/*
 web/emulator.js
 web/*.map
+server/core.cjs
+node_modules/

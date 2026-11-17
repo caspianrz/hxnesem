@@ -25,7 +25,7 @@ class Bus {
 	public function new() {
 		cpu = new Processor(this);
 		ppu = new PPU(null);
-		apu = new APU(read, function(cycles) dmcStall += cycles);
+		apu = new APU(function(address) return read(address), function(cycles) dmcStall += cycles);
 	}
 
 	public function write(address:Int, data:Int):Void {
@@ -48,24 +48,26 @@ class Bus {
 		}
 	}
 
-	public function read(address:Int):Int {
+	public function read(address:Int, readonly:Bool = false):Int {
 		address &= 0xffff;
 		if (cartridge != null) {
 			var data = cartridge.cpuRead(address);
 			if (data >= 0) return data;
 		}
 		if (address <= 0x1fff) return ram.get(address & 0x7ff);
-		if (address <= 0x3fff) return ppu.cpuRead(address & 7);
-		if (address == 0x4015) return apu.readStatus();
+		if (address <= 0x3fff) return ppu.cpuRead(address & 7, readonly);
+		if (address == 0x4015) return apu.readStatus(readonly);
 		if (address == 0x4016 || address == 0x4017) {
 			var port = address & 1;
 			if (controllerStrobe) return controllers[port] & 1;
 			var data = controllerShift[port] & 1;
-			controllerShift[port] = (controllerShift[port] >> 1) | 0x80;
+			if (!readonly) controllerShift[port] = (controllerShift[port] >> 1) | 0x80;
 			return data;
 		}
 		return 0;
 	}
+
+	public function mapperID():Int return cartridge == null ? -1 : cartridge.mapperID;
 
 	public function insertCartridge(cart:Cartridge) {
 		cartridge = cart;

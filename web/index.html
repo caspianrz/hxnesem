@@ -1,27 +1,67 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>NES Emulator</title>
-	<style>
-		* { box-sizing: border-box; }
-		html, body { margin: 0; width: 100%; height: 100%; }
-		body { display: flex; flex-direction: column; font: 14px sans-serif; background: #111; }
-		#loader { flex: none; padding: 12px; background: #fff; line-height: 1.6; }
-		#rom { max-width: 100%; }
-		#screen { position: relative; flex: 1; min-height: 0; overflow: hidden; }
-		#webgl { display: block; width: 100%; height: 100%; }
-	</style>
+  <meta charset="utf-8">
+  <link rel="icon" href="data:,">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>hxnesem · NES Emulator</title>
+  <link rel="stylesheet" href="ui.css">
 </head>
-
 <body>
-	<div id="loader">
-		<label>Load NES ROM (mappers 0–4): <input id="rom" type="file" accept=".nes"></label>
-		<div>Z: A · X: B · Shift: Select · Enter: Start · Arrow keys: Move</div>
-	</div>
-	<main id="screen"><canvas id="webgl" tabindex="0"></canvas></main>
-	<script src="./emulator.js"></script>
+  <header class="toolbar">
+    <a class="brand" href="./">hxnesem<span>NES emulator</span></a>
+    <div class="toolbar-actions">
+      <button id="open-rom" class="primary" type="button">Open ROM<span class="optional"> .nes</span></button>
+      <input id="rom" type="file" accept=".nes" hidden>
+      <button id="pause" type="button" disabled>Pause</button>
+      <button id="reset" type="button" disabled>Reset</button>
+    </div>
+    <div class="toolbar-actions utilities">
+      <button id="mute" type="button" aria-pressed="false">Mute</button>
+      <label class="volume-label" for="volume">Volume <output id="volume-value" for="volume">70%</output></label>
+      <input id="volume" type="range" min="0" max="100" value="70" aria-label="Volume">
+      <button id="settings-open" type="button">Controls</button>
+      <button id="debug-toggle" type="button" aria-expanded="false" aria-controls="cpu-panel">CPU inspector</button>
+    </div>
+  </header>
+  <div class="rom-bar">
+    <span id="rom-name">No ROM loaded</span>
+    <span id="run-state">Ready</span>
+  </div>
+  <div class="workspace">
+    <main id="screen" aria-label="NES screen">
+      <!-- Heaps checks inline sizing before setting a fixed canvas width. -->
+      <canvas style="width:100%;height:100%" id="webgl" tabindex="0" aria-label="Game screen. Click to play with your mapped keyboard controls."></canvas>
+      <div id="empty-state" class="empty-state">
+        <span class="screen-mark" aria-hidden="true">256 × 240</span>
+        <h1>Your next game starts here.</h1>
+        <p>Open a .nes file or drop one onto this screen.</p>
+        <button id="empty-open" class="primary" type="button">Choose a ROM</button>
+        <small>Mappers 0–4 supported · ROMs stay on your device</small>
+      </div>
+      <div id="drop-hint" class="drop-hint" hidden>Drop your .nes file to play</div>
+    </main>
+    <aside id="cpu-panel" class="cpu-panel" aria-label="CPU inspector" hidden>
+      <div class="panel-heading"><h2>CPU inspector</h2><div><button id="debug-popout" type="button">Pop out ↗</button><button id="debug-close" type="button" aria-label="Close CPU inspector">×</button></div></div>
+      <div id="debugger-root"></div>
+    </aside>
+  </div>
+  <footer class="status-bar"><span id="message" role="status">Starting emulator…</span><span id="control-summary"></span></footer>
+  <dialog id="settings" aria-labelledby="settings-title">
+    <form method="dialog" class="panel-heading"><h2 id="settings-title">Keyboard controls</h2><button aria-label="Close control settings">×</button></form>
+    <div class="settings-body">
+      <p>Choose an action, then press a key. Escape cancels. If a key is already used, the assignments swap.</p>
+      <label for="controller-port">Controller</label>
+      <select id="controller-port"><option value="0">Player 1</option><option value="1">Player 2</option></select>
+      <div id="key-map" class="key-map"></div>
+      <p id="mapping-message" role="status">Changes save automatically in this browser.</p>
+      <button id="restore-controls" type="button">Restore default controls</button>
+    </div>
+  </dialog>
+  <script src="settings.js"></script>
+  <script src="debugger.js"></script>
+  <script src="app.js"></script>
+  <script src="emulator.js"></script>
 </body>
-
 </html>

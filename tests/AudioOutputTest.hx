@@ -12,6 +12,7 @@ class AudioOutputTest {
 		globalThis.AudioContext = class {
 			constructor() { this.currentTime = 0; this.state = 'suspended'; this.destination = {}; this.sources = []; globalThis.testContext = this; }
 			resume() { this.state = 'running'; return Promise.resolve(); }
+			createGain() { const node = { connect: function() {}, gain: { setTargetAtTime: function(value) { globalThis.testVolume = value; } } }; return node; }
 			createBuffer(channels, count, rate) { return { duration: count / rate, pcm: new Float32Array(count), getChannelData: function() { return this.pcm; } }; }
 			createBufferSource() {
 				const source = { connect: function() {}, disconnect: function() { this.disconnected = true; }, start: function(time) { this.time = time; }, stop: function() { this.stopped = true; } };
@@ -25,6 +26,12 @@ class AudioOutputTest {
 		doc.listeners.pointerdown(null);
 		var context:Dynamic = js.Syntax.code('globalThis.testContext');
 		equal(context.state, 'running', 'gesture resumes context');
+		equal(js.Syntax.code('globalThis.testVolume'), 0.7, 'default gain');
+		output.setVolume(0.4); equal(js.Syntax.code('globalThis.testVolume'), 0.4, 'volume gain');
+		output.setMuted(true); equal(js.Syntax.code('globalThis.testVolume'), 0, 'mute immediate');
+		output.setVolume(0.9); equal(js.Syntax.code('globalThis.testVolume'), 0, 'volume change respects mute');
+		output.setMuted(false); equal(js.Syntax.code('globalThis.testVolume'), 0.9, 'unmute restores gain');
+		output.setVolume(2); equal(js.Syntax.code('globalThis.testVolume'), 1, 'volume clamped');
 		for (_ in 0...441) output.push(0.25);
 		output.flush();
 		var first:Dynamic = context.sources[0];

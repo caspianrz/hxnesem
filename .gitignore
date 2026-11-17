@@ -1,4 +1,4 @@
 .vscode/
 out/*
-web/*.js
+web/emulator.js
 web/*.map

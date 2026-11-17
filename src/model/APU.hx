@@ -52,11 +52,11 @@ class APU {
 
 	function get_irqPending():Bool return frameIRQ || dmc.irq;
 
-	public function readStatus():Int {
+	public function readStatus(readonly:Bool = false):Int {
 		var value = (pulse1.length > 0 ? 1 : 0) | (pulse2.length > 0 ? 2 : 0)
 			| (triangle.length > 0 ? 4 : 0) | (noise.length > 0 ? 8 : 0)
 			| (dmc.remaining > 0 ? 16 : 0) | (frameIRQ ? 64 : 0) | (dmc.irq ? 128 : 0);
-		frameIRQ = false;
+		if (!readonly) frameIRQ = false;
 		return value;
 	}
 

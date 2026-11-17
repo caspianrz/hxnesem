@@ -4,6 +4,9 @@ package audio;
 class AudioOutput {
 	#if js
 	var context:js.html.audio.AudioContext;
+	var gain:js.html.audio.GainNode;
+	var volume:Float = 0.7;
+	var muted = false;
 	var sources:Array<js.html.audio.AudioBufferSourceNode> = [];
 	var samples:Array<Float> = [];
 	var nextTime:Float = 0;
@@ -21,11 +24,25 @@ class AudioOutput {
 	function unlock(_:js.html.Event) {
 		if (context == null) {
 			context = new js.html.audio.AudioContext();
+			gain = context.createGain();
+			gain.connect(context.destination);
+			applyGain();
 			reset();
 		}
 		context.resume().catchError(function(error) {
 			js.Browser.console.warn('Audio could not resume', error);
 		});
+	}
+
+	public function setVolume(value:Float) {
+		volume = Math.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0.7;
+		applyGain();
+	}
+
+	public function setMuted(value:Bool) { muted = value; applyGain(); }
+
+	function applyGain() {
+		if (gain != null) gain.gain.setTargetAtTime(muted ? 0 : volume, context.currentTime, 0.01);
 	}
 
 	public function push(sample:Float) {
@@ -52,7 +69,7 @@ class AudioOutput {
 		samples = [];
 		var source = context.createBufferSource();
 		source.buffer = buffer;
-		source.connect(context.destination);
+		source.connect(gain);
 		source.onended = function(_) { sources.remove(source); source.disconnect(); };
 		sources.push(source);
 		source.start(nextTime);
@@ -66,6 +83,8 @@ class AudioOutput {
 	}
 	#else
 	public function new(sampleRate:Int) {}
+	public function setVolume(value:Float) {}
+	public function setMuted(value:Bool) {}
 	public function push(sample:Float) {}
 	public function reset() {}
 	public function flush() {}

@@ -23,8 +23,28 @@ python3 -m http.server 8000 --directory web
 ```
 
 Open http://localhost:8000 and choose a mapper 0–4 `.nes` file using the ROM
-picker. No game ROMs are bundled. Controls: Z = A, X = B, Shift = Select,
-Enter = Start, arrow keys = directions.
+picker, or drop a ROM onto the screen. No game ROMs are bundled.
+
+The browser toolbar provides pause/resume, reset, volume, and mute. **Controls**
+opens keyboard mapping for both players: choose an action and press a physical
+key (Escape cancels). Assigning an occupied key swaps its previous action.
+Mappings, volume, and mute save automatically in this browser's local storage;
+ROM contents are never saved or uploaded. If storage is blocked, settings work
+for the current session. Restore defaults resets both players' controls.
+
+Player 1 defaults: Z = A, X = B, Left Shift = Select, Enter = Start, arrow keys
+= directions. Player 2: G = A, H = B, R = Select, T = Start, W/S/A/D = directions.
+Click the screen to play; focus leaving the window releases all held buttons.
+Opening Controls pauses play and resumes it on close if it was running.
+
+**CPU inspector** opens a docked panel with live registers, flags, cycle count,
+and the next 20 disassembled instructions with addresses and raw bytes.
+Pause/resume, reset, and single-instruction stepping work in the panel.
+**Pop out** opens the same inspector in a separate browser window connected to
+the main emulator. If pop-ups are blocked, the docked panel remains available.
+Debugger reads preserve PPU/APU flags and controller shift registers. Unknown
+opcodes display as `.byte` data. These browser controls do not change the
+HashLink command-line interface.
 
 For HashLink, install `hlsdl` as well, build using `haxe build.hl.hxml`, then
 run `hl out/emulator.hl path/to/game.nes`.
@@ -35,6 +55,8 @@ Run the core regression checks without Heaps or a game ROM:
 haxe -cp src -cp tests -main CoreTest --interp
 haxe -cp src -cp tests -main ProcessorTest --interp
 haxe -cp src -cp tests -main APUTest --interp
+haxe -cp src -cp tests -main DebuggerTest --interp
+node tests/SettingsTest.cjs
 ```
 
 The checks use synthetic cartridges and cover ROM loading/mapping, register
@@ -52,8 +74,10 @@ node /tmp/audio-output-test.js
 ```
 
 A synthetic boot ROM also waits for vblank and initializes a colored framebuffer. The web
-build and JavaScript core tests have also been checked; commercial-game
-compatibility and an interactive browser session have not been verified.
+build and JavaScript core tests have also been checked. Chromium UI checks with
+a synthetic ROM cover both mapped controllers, persisted settings, ROM errors,
+drag-and-drop, audio controls, debugger docking/pop-out/stepping, and responsive
+canvas sizing. Commercial-game compatibility remains unverified.
 
 This remains a work in progress. The PPU samples tiles directly instead of
 emulating the hardware fetch/shift-register pipeline. Sprite evaluation is

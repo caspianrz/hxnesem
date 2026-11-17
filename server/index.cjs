@@ -29,6 +29,7 @@ function main(args) {
   const bytes = fs.readFileSync(config.rom);
   const rom = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
   const romHash = factory.create(rom).romHash; // Validate the cartridge before accepting connections.
+  const romPacket = { type: 'rom', romHash, romName: path.basename(config.rom), data: bytes.toString('base64') };
   const rooms = new Map();
   const root = path.resolve(__dirname, '../web');
   const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.map': 'application/json' };
@@ -75,13 +76,14 @@ function main(args) {
         if (packet.type === 'join' && !room) {
           if (process.env.NETPLAY_TOKEN && packet.token !== process.env.NETPLAY_TOKEN) throw new Error('Invalid server token');
           if (typeof packet.room !== 'string' || !/^[a-zA-Z0-9_-]{1,32}$/.test(packet.room)) throw new Error('Room must be 1–32 letters, numbers, underscores or hyphens');
-          if (packet.version !== VERSION || packet.romHash !== romHash) throw new Error('Load the same ROM and emulator version as the server');
+          if (packet.version !== VERSION || packet.romHash !== romHash) throw new Error('ROM or emulator version mismatch');
           name = packet.room;
           let target = rooms.get(name);
           if (!target) {
             if (rooms.size >= config.maxRooms) throw new Error('Server room limit reached');
             target = new Room(factory.create(rom)); rooms.set(name, target);
           }
+          peer.send(romPacket);
           target.join(peer, packet); room = target; clearTimeout(handshake);
           if (room.running && room.deadline == null) room.deadline = now + room.inputDelay * 1000 / FPS;
         } else if (packet.type === 'input' && room) room.input(peer, packet);

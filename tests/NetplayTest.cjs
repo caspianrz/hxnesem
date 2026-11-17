@@ -138,11 +138,13 @@ test('browser connection state: handshake, start, local-input delay, sync and si
     close() { this.readyState = 3; }
     receive(packet) { this.onmessage({ data: JSON.stringify(packet) }); }
   }
-  const window = { NesRollback: require('../web/rollback.js'), location: { href: 'http://localhost:8080/' }, WebSocket: Socket };
+  const window = { NesRollback: require('../web/rollback.js'), location: { href: 'http://localhost:8080/' }, WebSocket: Socket, atob };
   const context = { window, URL, performance: { now: () => now }, setTimeout: () => 1, clearTimeout() {}, setInterval: () => 2, clearInterval() {} };
   vm.runInNewContext(fs.readFileSync(require.resolve('../web/netplay.js'), 'utf8'), context);
+  let loaded = false;
   const api = {
-    getState: () => ({ loaded: true }), romHash: () => 'toy', localInput: slot => [5, 9][slot],
+    getState: () => ({ loaded }), romHash: () => loaded ? 'toy' : '', localInput: slot => [5, 9][slot],
+    loadRom(data) { assert.deepEqual(Buffer.from(data), Buffer.from([78, 69, 83, 26])); loaded = true; },
     netplayStart() { active = true; }, netplayStop() { active = false; stopped++; },
     netplaySave: () => String(value), netplayLoad: state => { value = Number(state); },
     netplayFrame: inputs => { value += inputs[0] + inputs[1]; }
@@ -151,6 +153,9 @@ test('browser connection state: handshake, start, local-input delay, sync and si
   client.connect('http://localhost:8080', 'main'); const socket = sockets[0];
   assert.equal(socket.url, 'ws://localhost:8080/netplay');
   socket.receive({ type: 'hello', version: VERSION, romHash: 'toy' }); assert.equal(socket.sent[0].type, 'join');
+  assert.equal(loaded, false, 'connect and join require no local ROM');
+  socket.receive({ type: 'rom', romHash: 'toy', romName: 'server.nes', data: Buffer.from([78, 69, 83, 26]).toString('base64') });
+  assert.equal(loaded, true); assert.equal(client.romName, 'server.nes');
   socket.receive({ type: 'start', slot: 1, version: VERSION, romHash: 'toy', nextFrame: 0, state: '0', inputDelay: 3 });
   assert.equal(active, true); client.pump();
   assert.ok(socket.sent.some(packet => packet.type === 'input' && packet.frame === 3 && packet.input === 9));
@@ -169,11 +174,17 @@ test('browser connection state: handshake, start, local-input delay, sync and si
   socket.receive({ type: 'sync', nextFrame: 7, state: '42' }); assert.equal(value, 42); assert.equal(client.session.nextFrame, 7);
   client.disconnect(); assert.equal(active, false); assert.equal(client.connected, false); assert.equal(stopped, 1);
   client.connect('ws://localhost:8080', 'main');
+  sockets[1].receive({ type: 'hello', version: VERSION, romHash: 'toy' });
+  sockets[1].receive({ type: 'rom', romHash: 'toy', data: Buffer.from([78, 69, 83, 26]).toString('base64') });
   sockets[1].receive({ type: 'start', slot: 0, version: VERSION, romHash: 'toy', nextFrame: 0, state: '0', inputDelay: 3 });
   client.pump();
   assert.equal(sockets[1].sent.find(packet => packet.type === 'input' && packet.frame === 3).input, 5, 'Player 1 samples controller 1');
   client.disconnect();
-  client.connect('ws://localhost:8080', 'main'); sockets[2].receive({ type: 'hello', version: VERSION, romHash: 'different' });
+  client.connect('ws://localhost:8080', 'main'); sockets[2].receive({ type: 'hello', version: 'incompatible', romHash: 'different' });
   assert.equal(client.connected, false); assert.equal(active, false);
+  client.connect('ws://localhost:8080', 'main');
+  sockets[3].receive({ type: 'hello', version: VERSION, romHash: 'different' });
+  sockets[3].receive({ type: 'rom', romHash: 'different', data: Buffer.from([78, 69, 83, 26]).toString('base64') });
+  assert.equal(client.connected, false, 'downloaded ROM must match advertised hash');
   assert.throws(() => window.NesNetplay.serverURL('javascript:alert(1)'), /server URL/);
 });

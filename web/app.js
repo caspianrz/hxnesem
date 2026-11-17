@@ -70,7 +70,7 @@
     const connected = !!(netClient && netClient.connected);
     $('pause').disabled = $('reset').disabled = !state.loaded || connected;
     $('netplay-open').disabled = false;
-    $('netplay-connect').disabled = !state.loaded || connected;
+    $('netplay-connect').disabled = connected;
     $('netplay-disconnect').disabled = !connected;
     $('pause').textContent = state.paused ? 'Resume' : 'Pause';
     $('run-state').textContent = state.loaded ? (state.netplay ? 'Netplay · P' + ((netClient && netClient.session ? netClient.session.slot : 0) + 1) : state.paused ? 'Paused' : 'Running') + ' · Mapper ' + state.mapper : 'Ready';
@@ -108,6 +108,7 @@
     api = window.nes;
     if (!netClient) netClient = new window.NesNetplay.Client(api, (text, client) => {
       $('netplay-status').textContent = text;
+      if (client.romName) { $('rom-name').textContent = client.romName; $('rom-name').title = client.romName; }
       $('netplay-server').disabled = $('netplay-room').disabled = $('netplay-token').disabled = client.connected;
       clearInput(); notify(text); stateChanged();
     });
@@ -128,6 +129,7 @@
     if (!netClient) return;
     try {
       const server = $('netplay-server').value.trim(); const room = $('netplay-room').value.trim();
+      ++fileRequest;
       netClient.connect(server, room, $('netplay-token').value);
       try { storage.setItem('hxnesem.netplay.v1', JSON.stringify({ server, room })); } catch (_) {}
     } catch (error) { $('netplay-status').textContent = error.message || String(error); }

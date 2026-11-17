@@ -18,9 +18,10 @@
     get connected() { return this.socket !== null; }
     connect(address, room, token = '') {
       if (this.connected) throw new Error('Disconnect the current session first');
-      if (!this.api.getState().loaded) throw new Error('Load the same .nes ROM as the server first');
       if (!/^[a-zA-Z0-9_-]{1,32}$/.test(room)) throw new Error('Enter a room name using letters, numbers, underscores or hyphens');
       const socket = new root.WebSocket(serverURL(address));
+      this.romName = null;
+      let serverHash = null; let romReady = false;
       this.socket = socket; this.report('Connecting…');
       const timeout = setTimeout(() => { if (!this.session) this.disconnect('Connection timed out; returned to single-player.'); }, 15000);
       socket.onmessage = event => {
@@ -28,13 +29,24 @@
         try {
           const packet = JSON.parse(event.data);
           if (packet.type === 'hello') {
-            if (packet.version !== VERSION || packet.romHash !== this.api.romHash()) throw new Error('ROM or emulator version does not match the server');
-            this.send({ type: 'join', version: VERSION, romHash: this.api.romHash(), room, token });
+            if (serverHash !== null || packet.version !== VERSION || typeof packet.romHash !== 'string') throw new Error('Invalid server handshake');
+            serverHash = packet.romHash;
+            this.report('Downloading server ROM…');
+            this.send({ type: 'join', version: VERSION, romHash: serverHash, room, token });
+          } else if (packet.type === 'rom') {
+            if (serverHash === null || romReady || packet.romHash !== serverHash || typeof packet.data !== 'string') throw new Error('Invalid server ROM');
+            const binary = root.atob(packet.data);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            this.api.loadRom(bytes.buffer);
+            if (this.api.romHash() !== serverHash) throw new Error('Server ROM hash mismatch');
+            romReady = true; this.romName = typeof packet.romName === 'string' ? packet.romName : 'Server ROM';
+            this.report('Loaded ' + this.romName + ' from server.');
           } else if (packet.type === 'waiting') {
             clearTimeout(timeout); this.report('Waiting for a second player in room ' + room + '…');
           } else if (packet.type === 'start') {
             clearTimeout(timeout);
-            if (packet.version !== VERSION || packet.romHash !== this.api.romHash() || ![0, 1].includes(packet.slot) || !Number.isInteger(packet.inputDelay) || packet.inputDelay < 1 || packet.inputDelay > 8) throw new Error('Invalid session configuration');
+            if (!romReady || packet.version !== VERSION || packet.romHash !== this.api.romHash() || ![0, 1].includes(packet.slot) || !Number.isInteger(packet.inputDelay) || packet.inputDelay < 1 || packet.inputDelay > 8) throw new Error('Invalid session configuration');
             this.api.netplayStart();
             this.session = new Rollback({ save: () => this.api.netplaySave(), load: state => this.api.netplayLoad(state), step: (pair, audible) => this.api.netplayFrame(pair, audible) }, packet.slot);
             this.delay = packet.inputDelay;
